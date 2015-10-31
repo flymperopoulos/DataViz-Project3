@@ -1,75 +1,29 @@
-
 <!DOCTYPE html>
 <html>
   
   <head>
     
     <meta charset="utf-8">
-    <title>Social Media Viz Demo</title>
+    <title>Global Attitudes</title>
 
     <!-- load D3 library -->
 
+    <link rel="stylesheet" type="text/css" href="style.css"> 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
-
-    <style>
-
-body,text {
-    font-family: sans-serif;
-}
-
-rect.bar { 
-   stroke: white;
-   stroke-width: 2px;
-   fill: #003b5c;
-}
-
-rect.bar:hover { 
-   fill: grey;
-}
-
-text.value {
-   font-weight: bold;
-   font-size: 16px;
-   fill: #003b5c;
-}
-
-text.label {
-   font-size: 20px;
-}
-
-#title {
-   font-weight: bold;
-   font-size: 20px;
-   fill: black;
-}
-
-    </style>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 
   </head>
   
   <body>
 
-
-    <h1>Social Media - Drill down interactions</h1>
-
+    <h1 align="center" class="center-title">Global Attitudes</h1>
+    <h4 align="center" class="names-header">Radmer van der Heyde and Filippos Lymperopoulos</h4>
 
     <div>
-    <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
-    </svg>
+    	<svg id="viz" height="500" width="800" style="border: 1px solid grey;"></svg>
     </div>
 
     <script>
-
-
-/*
- * Demo: social media 2014 (fake data)
- *
- *
- * Refining interactions
- * 
- */
-
-
 
 // call run when the page finishes loading
       
