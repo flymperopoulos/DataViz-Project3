@@ -11,11 +11,12 @@
   </head>
   
   <body>
+  	<center><img src="./mush.png" class="logo"></center>
     <h1 align="center" class="center-title">Global Attitudes</h1>
     <h4 align="center" class="names-header">Radmer van der Heyde and Filippos Lymperopoulos</h4>
-
+    <hr width="20%">
     <div>
-    	<svg id="viz" height="500" width="800" style="border: 1px solid grey;"></svg>
+    	<svg id="viz" height="500" width="800" class="centeredSvg"></svg>
     </div>
 
     <script>
@@ -49,7 +50,7 @@ function countSplitByColumn (data,pred,col) {
     var counts = { };
     var all = 0;
     data.forEach(function(r) {
-	if (pred(r)) { 
+	if (pred(r)) {
 		GLOBAL.currData.push(r);
 	    all += 1;
 	    c = r[col];
@@ -86,7 +87,6 @@ function initializeView () {
  	.attr("y",s.margin/3)
 	.attr("dy","0.3em")
 	.style("text-anchor","middle")
-	.text("Welcome!");
 
     svg.append("text")
 	.attr("id","info")
@@ -100,6 +100,7 @@ function initializeView () {
 	.attr("x", s.width/2)
 	.attr("y", s.height/2)
 	.attr("dy", "0.3em")
+	.style("fill","#696969")
 	.style("text-anchor","middle")
 	.text("LOADING...");
 
@@ -142,12 +143,17 @@ function setupOverview(q_index, response) {
 
 	// update fields
 	svg.select("#title")
-	.text("Are you satisfied or dissatisfied with our country today?")
+	.text("Are you satisfied or dissatisfied with our country today?" + "\n" + "sdfasd")
 	svg.select("#info")
-	.text("Population asked: " + total_count)
+	.text("Number of people asked: " + total_count)
+	.style("text-decoration","none")
+	.style("fill","#696969");
+
+
 	svg.select("#loading")
 	.text(null)
 
+	// bind data to responses
 	sel = svg.selectAll("g")
 	.data(responses)
 	.enter()
@@ -156,10 +162,11 @@ function setupOverview(q_index, response) {
 	sel.append("rect")
 	.attr("class","bar")
 	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth; })
-	.attr("y",s.height-s.margin)
+	.attr("y",s.height-s.margin-10)
 	.attr("width",barWidth)
+	.style("fill","#EC5D57")
 	.attr("height",0)
-	// .on("click",function(d,i) { switchToNextQuestion(GLOBAL.questions[i]); })
+	.on("click",function(d,i) { switchToNextQuestion(responses[i]); })
 
 	// value on each bar
 	sel.append("text")
@@ -167,7 +174,8 @@ function setupOverview(q_index, response) {
 	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
 	.attr("y",s.height-s.margin-20)
 	.attr("dy","0.3em")
-	.style("text-anchor","middle");
+	.style("text-anchor","middle")
+	.style("fill","#EC5D57")
 
 	// show answers on x-axis for question
 	sel.append("text")
@@ -175,6 +183,8 @@ function setupOverview(q_index, response) {
 	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
 	.attr("y",s.height-s.margin)
 	.attr("dy","0.3em")
+	.style("fill","#696969")
+	.style("font-size", 12)
 	.style("text-anchor","middle")
 	.text(function(d) { return (d); });
 
@@ -214,6 +224,8 @@ function updateOverview (){
 	.data(counts);
 
 	sel.select(".bar") 
+	.on("mouseover",function() { this.style.fill = "#EC6957"; })
+	.on("mouseout",function(d,i) { this.style.fill = "#EC5D57" })
 	.transition()
 	.duration(1000)
 	.attr("y",function(d) { return yPos(d)-10; }) 
@@ -227,6 +239,130 @@ function updateOverview (){
 	.text(function(d) { return Math.round(100*d/total_count)+"%"; });
 }
 
+function switchToNextQuestion(response) {
+
+	// channel between questions
+	var data = countSplitByColumn(GLOBAL.data,
+		function(r) { 
+			return r[GLOBAL.questions[GLOBAL.q_index]]===response},
+		GLOBAL.questions[GLOBAL.q_index+1])
+
+	// setup
+	setupNextQuestion(response, data);
+	// update
+	updateNextQuestion(response, data); 
+}
+
+function switchBack(){
+	setupOverview();
+	updateOverview();
+}
+
+function setupNextQuestion (r, d) {
+
+	var responses = []
+	var counts = []
+	for (var key in d.counts) {
+		responses.push(key);
+		counts.push(d.counts[key]);
+	}
+
+	var svg = d3.select("#viz");
+	var s = computeSizes(svg);
+	var barWidth = s.chartWidth/(2*responses.length-1);
+	
+	svg.select("#info")
+		.text("Back")
+		.style("text-decoration","underline")
+		.style("cursor","pointer")
+		.style("font-size", 12)
+		.style("fill","#696969")
+		.on("click",switchBack);
+
+	svg.selectAll("g").remove();
+
+	svg.select("#title")
+	.text(r + "... What do you think about the economic situation in the US?")
+
+	sel = svg.selectAll("g")
+	.data(responses)
+	.enter()
+	.append("g")
+	.attr("transform",
+	    function(d,i) { return "translate("+(s.margin+(i*2)*barWidth)+",0)"; 
+	});
+
+	// setup of bar
+	sel.append("rect")
+	.attr("class","bar")
+	.style("fill","#EC5D57")
+	.attr("x",0)
+	.attr("y",s.height-s.margin)
+	.attr("width",barWidth)
+	.attr("height",0);
+
+	sel.append("text")
+	.attr("class","value")
+	.attr("x",barWidth/2)
+	.attr("y",s.height-s.margin-20)
+	.attr("dy","0.3em")
+	.style("fill","#EC5D57")
+	.style("text-anchor","middle");
+
+	sel.append("text")
+	.attr("class","label")
+	.attr("x",barWidth/2)
+	.attr("y",s.margin+s.chartHeight+10)
+	.attr("dy","0.3em")
+	.style("font-size", 12)
+	.style("text-anchor","middle")
+	.style("fill","#696969")
+	.text(function(d) { return d; });
+}
+
+function updateNextQuestion(r, d) {
+	console.log("UPDATING NEW QUESTION");
+
+	var counts = []
+	var responses = []
+	var total_count = 0
+	for (var key in d.counts) {
+		total_count += d.counts[key];
+		responses.push(key);
+		counts.push(d.counts[key]);
+	}
+
+	var svg = d3.select("#viz");
+	var s = computeSizes(svg);
+	var barWidth = s.chartWidth/(2*responses.length-1);
+
+	var yPos = d3.scale.linear() 
+		.domain([0,total_count])
+		.range([s.height-s.margin,s.margin]);
+
+	var height = d3.scale.linear() 
+		.domain([0,total_count])
+		.range([0,s.chartHeight]);
+
+	sel = svg.selectAll("g") 
+		.data(counts);
+
+	sel.select(".bar") 
+		.attr("class", "bar")
+		.on("mouseover",function() { this.style.fill = "#EC6957"; })
+		.on("mouseout",function(d,i) { this.style.fill = "#EC5D57" })
+		.transition()
+		.duration(1000)
+		.attr("y",function(d) { return yPos(d)-10; }) 
+		.attr("height",function(d) { return height(d); });
+
+	// value on bar
+	sel.select(".value") 
+		.transition()
+		.duration(1000)
+		.attr("y",function(d) { return yPos(d) - 20; }) 
+		.text(function(d) { return Math.round(100*d/total_count)+"%"; });
+}
 
 // given an array of objects (each with a 'value' field)
 // add a 'cumulate' field to each object holding the

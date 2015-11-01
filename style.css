@@ -11,7 +11,8 @@
 
 .center-title {
 	font-family:Verdana; 
-	font-size: 25px;
+	font-size: 30px;
+	margin-top: 10px;
 	color:#696969;
 }
 
@@ -27,6 +28,11 @@ body,text {
     font-family: sans-serif;
 }
 
+.logo {
+	width: 100px;
+	margin-top: 20px;
+}
+
 rect.bar { 
    stroke: white;
    stroke-width: 2px;
@@ -35,6 +41,7 @@ rect.bar {
 
 rect.bar:hover { 
    fill: grey;
+   cursor: pointer;
 }
 
 text.value {
@@ -43,12 +50,22 @@ text.value {
    fill: #003b5c;
 }
 
+
 text.label {
    font-size: 20px;
 }
 
 #title {
-   font-weight: bold;
    font-size: 20px;
    fill: black;
 }
+
+#info {
+	color:#939393;
+}
+
+#loading {
+	font-family:Verdana; 
+	color:#939393;
+}
+
