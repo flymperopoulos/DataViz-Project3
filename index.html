@@ -5,17 +5,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
     <title>Global Attitudes</title>
-
-    <!-- load D3 library -->
-
     <link rel="stylesheet" type="text/css" href="style.css"> 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-
   </head>
   
   <body>
-
     <h1 align="center" class="center-title">Global Attitudes</h1>
     <h4 align="center" class="names-header">Radmer van der Heyde and Filippos Lymperopoulos</h4>
 
@@ -26,15 +21,15 @@
     <script>
 
 // call run when the page finishes loading
-      
 window.addEventListener("load",run);
       
 function run () {
     initializeView();
-    // get data, call f when done
     getDataRows(function(data) {
-	GLOBAL.data = data;
-	updateView() });
+		GLOBAL.data = data;
+		setupOverview();
+		updateOverview();
+	});
 }
 
 // global variables 
@@ -44,13 +39,12 @@ var GLOBAL = { data: [],
 			  "Q4",
 			  "Q5",
 			  "Q7",
-			  "Q8"]
-	        
+			  "Q8"],
+			q_index:0
 	     }
 
 // split data into groups based on 'col' values
 // (only process rows satisfying 'pred')
-
 function countSplitByColumn (data,pred,col) { 
     var counts = { };
     var all = 0;
@@ -71,12 +65,9 @@ function countSplitByColumn (data,pred,col) {
 
 
 function computeSizes (svg) {     
-    // get the size of the SVG element
     var height = svg.attr("height");
     var width = svg.attr("width");
     var margin = 100;
-    // the chart lives in the svg surrounded by a margin of 100px
-
     return {height:height,
 	    width: width,
 	    margin: margin,
@@ -84,14 +75,7 @@ function computeSizes (svg) {
 	    chartWidth: width-2*margin}
 }    
 
-
-
 function initializeView () { 
-
-	append("svg:image")
-	    .attr("xlink:href", "http://www.arabianbusiness.com/skins/ab.main/gfx/loading_spinner.gif")
-	    .attr("x", s.width/2)
-	    .attr("y",s.height/2+20);
 
     var svg = d3.select("#viz");
     var s = computeSizes(svg);
@@ -102,7 +86,14 @@ function initializeView () {
  	.attr("y",s.margin/3)
 	.attr("dy","0.3em")
 	.style("text-anchor","middle")
-	.text("Are you satisfied or dissatisfied with our country today?");
+	.text("Welcome!");
+
+    svg.append("text")
+	.attr("id","info")
+	.attr("x",s.width/2)
+ 	.attr("y",s.margin/1.5)
+	.attr("dy","0.3em")
+	.style("text-anchor","middle")
 
 	svg.append("text")
 	.attr("id", "loading")
@@ -110,16 +101,11 @@ function initializeView () {
 	.attr("y", s.height/2)
 	.attr("dy", "0.3em")
 	.style("text-anchor","middle")
-	.text("LOADING");
-
-	svg.append("svg:image")
-	.attr("xlink:href", "http://www.arabianbusiness.com/skins/ab.main/gfx/loading_spinner.gif")
-	.attr("x", s.width/2)
-	.attr("y",s.height/2+20);
+	.text("LOADING...");
 
 }
 
-function updateView(q_index, response) {
+function setupOverview(q_index, response) {
 	if (!q_index) 
 		q_index = 0;
 
@@ -131,8 +117,6 @@ function updateView(q_index, response) {
 	var svg = d3.select("#viz");
 	var s = computeSizes(svg);
 	
-
-	svg.selectAll("g").remove();
 	var data;
 	var counts = [];
 	var responses = [];
@@ -151,14 +135,102 @@ function updateView(q_index, response) {
 		responses.push(key);
 		counts.push(data.counts[key]);
 	}
-	var barwidth = s.chartWidth/(2*responses.length-1);
-	console.log(data);
+
+	var barWidth = s.chartWidth/(2*responses.length-1);
+
+	svg.selectAll("g").remove();
+
+	// update fields
+	svg.select("#title")
+	.text("Are you satisfied or dissatisfied with our country today?")
+	svg.select("#info")
+	.text("Population asked: " + total_count)
+	svg.select("#loading")
+	.text(null)
+
+	sel = svg.selectAll("g")
+	.data(responses)
+	.enter()
+	.append("g")
+
+	sel.append("rect")
+	.attr("class","bar")
+	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth; })
+	.attr("y",s.height-s.margin)
+	.attr("width",barWidth)
+	.attr("height",0)
+	// .on("click",function(d,i) { switchToNextQuestion(GLOBAL.questions[i]); })
+
+	// value on each bar
+	sel.append("text")
+	.attr("class","value")
+	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
+	.attr("y",s.height-s.margin-20)
+	.attr("dy","0.3em")
+	.style("text-anchor","middle");
+
+	// show answers on x-axis for question
+	sel.append("text")
+	.attr("class","value")
+	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
+	.attr("y",s.height-s.margin)
+	.attr("dy","0.3em")
+	.style("text-anchor","middle")
+	.text(function(d) { return (d); });
+
 }
+
+function updateOverview (){
+	console.log("UPDATING OVERVIEW");
+	var svg = d3.select("#viz");
+	var s = computeSizes(svg);
+
+	var data;
+	var counts = [];
+	if (GLOBAL.questions[GLOBAL.q_index] === "Q1") {
+		data = countSplitByColumn(GLOBAL.data,
+			function(r) { return true; },
+			GLOBAL.questions[GLOBAL.q_index]);
+	} else {
+		data = countSplitByColumn(GLOBAL.currData,
+			function(r) { return r[GLOBAL.questions[GLOBAL.q_index-1]===response];},
+			GLOBAL.questions[GLOBAL.q_index]);
+	}
+
+	total_count = data.all;
+	for (var key in data.counts) {
+		counts.push(data.counts[key]);
+	}
+
+	var yPos = d3.scale.linear() 
+	.domain([0,total_count])
+	.range([s.height-s.margin,s.margin]);
+
+	var height = d3.scale.linear() 
+	.domain([0,total_count])
+	.range([0,s.chartHeight]);
+
+	sel = svg.selectAll("g") 
+	.data(counts);
+
+	sel.select(".bar") 
+	.transition()
+	.duration(1000)
+	.attr("y",function(d) { return yPos(d)-10; }) 
+	.attr("height",function(d) { return height(d); });
+
+	// value on bar
+	sel.select(".value") 
+	.transition()
+	.duration(1000)
+	.attr("y",function(d) { return yPos(d) - 20; }) 
+	.text(function(d) { return Math.round(100*d/total_count)+"%"; });
+}
+
 
 // given an array of objects (each with a 'value' field)
 // add a 'cumulate' field to each object holding the
 // sum of all the values before that object
-
 function cumulate (arr) {
     var cumulative = 0;
     for (var i=0; i<arr.length; i++) {
@@ -167,17 +239,12 @@ function cumulate (arr) {
     }
 }
 
-/* depending on your browser and your local configuration,
-   you may need to have a web server deliver the file data.csv
-   just use the default python web server */
-
 function getDataRows (f) {
     d3.csv("america.csv",
 	   function(error,data) {
 	       f(data);
 	   });
-}
-      
+}    
     </script>
     
   </body>
