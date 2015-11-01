@@ -16,7 +16,7 @@
     <h4 align="center" class="names-header">Radmer van der Heyde and Filippos Lymperopoulos</h4>
     <hr width="20%">
     <div>
-    	<svg id="viz" height="500" width="800" class="centeredSvg"></svg>
+    	<svg id="viz" height="500" width="1000" class="centeredSvg"></svg>
     </div>
 
     <script>
@@ -40,12 +40,15 @@ var GLOBAL = { data: [],
 			  "Q4",
 			  "Q5",
 			  "Q7",
-			  "Q8"],
+			  "Q8",
+			  "DONE"],
 			q_text: ["Are you satisfied or dissatisfied with our country today?",
 			  "how would you describe the current economic situation?",
 			  "And over the next 12 months how do you expect the economic situation in our country to do?",
 			  "And over the next 12 months how do you expect your personal economic situation to do?",
-			  "When children today in (survey country) grow up, do you think they will be better off or worse off financially than their parents? "],
+			  "When children today grow up, how well off do you think they will be financially than their parents?",
+			  "Final count"],
+			r_selected: '',  
 			q_index:0
 	     }
 
@@ -102,6 +105,13 @@ function initializeView () {
 	.style("text-anchor","middle")
 
 	svg.append("text")
+	.attr("id","selected")
+	.attr("x",s.width/2)
+ 	.attr("y",s.margin)
+	.attr("dy","0.3em")
+	.style("text-anchor","middle")
+
+	svg.append("text")
 	.attr("id", "loading")
 	.attr("x", s.width/2)
 	.attr("y", s.height/2)
@@ -150,51 +160,66 @@ function setupOverview(q_index, response) {
 
 	// update fields
 	svg.select("#title")
-	.text(GLOBAL.q_text[q_index] + "\n" + "sdfasd")
+	.text(GLOBAL.q_text[q_index])
 	svg.select("#info")
 	.text("Number of people asked: " + total_count)
 	.style("text-decoration","none")
 	.style("fill","#696969");
 
+	svg.select("#selected")
+	.text(GLOBAL.r_selected)
+	.style("text-decoration","none")
+	.style("fill","#696969");
 
-	svg.select("#loading")
-	.text(null)
+
+	
 
 	// bind data to responses
-	sel = svg.selectAll("g")
-	.data(responses)
-	.enter()
-	.append("g")
+	if (GLOBAL.q_index !== GLOBAL.questions.length-1) {
+		svg.select("#loading")
+		.text(null)
 
-	sel.append("rect")
-	.attr("class","bar")
-	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth; })
-	.attr("y",s.height-s.margin-10)
-	.attr("width",barWidth)
-	.style("fill","#EC5D57")
-	.attr("height",0)
-	.on("click",function(d,i) { switchToNextQuestion(responses[i]); })
+		sel = svg.selectAll("g")
+		.data(responses)
+		.enter()
+		.append("g")
 
-	// value on each bar
-	sel.append("text")
-	.attr("class","value")
-	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
-	.attr("y",s.height-s.margin-20)
-	.attr("dy","0.3em")
-	.style("text-anchor","middle")
-	.style("fill","#EC5D57")
+		sel.append("rect")
+		.attr("class","bar")
+		.attr("x",function(d,i) { return s.margin+(i*2)*barWidth; })
+		.attr("y",s.height-s.margin-10)
+		.attr("width",barWidth)
+		.style("fill","#EC5D57")
+		.attr("height",0)
+		.on("click",function(d,i) { switchToNextQuestion(responses[i]); })
 
-	// show answers on x-axis for question
-	sel.append("text")
-	.attr("class","value")
-	.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
-	.attr("y",s.height-s.margin)
-	.attr("dy","0.3em")
-	.style("fill","#696969")
-	.style("font-size", 12)
-	.style("text-anchor","middle")
-	.text(function(d) { return (d); });
+		// value on each bar
+		sel.append("text")
+		.attr("class","value")
+		.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
+		.attr("y",s.height-s.margin-20)
+		.attr("dy","0.3em")
+		.style("text-anchor","middle")
+		.style("fill","#EC5D57")
 
+		// show answers on x-axis for question
+		sel.append("text")
+		.attr("class","value")
+		.attr("x",function(d,i) { return s.margin+(i*2)*barWidth+barWidth/2; })
+		.attr("y",s.height-s.margin)
+		.attr("dy","0.3em")
+		.style("fill","#696969")
+		.style("font-size", 12)
+		.style("text-anchor","middle")
+		.text(function(d) { return (d); });
+	} else {
+		svg.select("#loading")
+		.text("Back")
+		.style("cursor", "pointer")
+		.on("click",function() { switchToNextQuestion(''); })
+		.on("mouseover",function() { this.style.fill = "#EC6957"; })
+		.on("mouseout",function(d,i) { this.style.fill = "#696969" })
+	}
 }
 
 function updateOverview (response){
@@ -222,7 +247,6 @@ function updateOverview (response){
 	for (var key in data.counts) {
 		counts.push(data.counts[key]);
 	}
-	console.log(counts);
 	var yPos = d3.scale.linear() 
 	.domain([0,total_count])
 	.range([s.height-s.margin,s.margin]);
@@ -251,11 +275,16 @@ function updateOverview (response){
 }
 
 function switchToNextQuestion(response) {
-
+	if (GLOBAL.q_index === 0)
+		GLOBAL.r_selected += response;
+	else 
+		GLOBAL.r_selected += "->"+response;
 	// channel between questions
 	GLOBAL.q_index++;
-	if (GLOBAL.q_index >= GLOBAL.questions.length)
+	if (GLOBAL.q_index >= GLOBAL.questions.length) {
 		GLOBAL.q_index = 0;
+		GLOBAL.r_selected = '';
+	}
 	// setup
 	setupOverview(GLOBAL.q_index, response);
 	// update
