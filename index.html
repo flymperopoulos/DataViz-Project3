@@ -254,6 +254,8 @@ function switchToNextQuestion(response) {
 
 	// channel between questions
 	GLOBAL.q_index++;
+	if (GLOBAL.q_index >= GLOBAL.questions.length)
+		GLOBAL.q_index = 0;
 	// setup
 	setupOverview(GLOBAL.q_index, response);
 	// update
