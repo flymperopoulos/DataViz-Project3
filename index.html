@@ -41,12 +41,18 @@ var GLOBAL = { data: [],
 			  "Q5",
 			  "Q7",
 			  "Q8"],
+			q_text: ["Are you satisfied or dissatisfied with our country today?",
+			  "how would you describe the current economic situation?",
+			  "And over the next 12 months how do you expect the economic situation in our country to do?",
+			  "And over the next 12 months how do you expect your personal economic situation to do?",
+			  "When children today in (survey country) grow up, do you think they will be better off or worse off financially than their parents? "],
 			q_index:0
 	     }
 
 // split data into groups based on 'col' values
 // (only process rows satisfying 'pred')
-function countSplitByColumn (data,pred,col) { 
+function countSplitByColumn (data,pred,col) {
+	GLOBAL.currData = []; 
     var counts = { };
     var all = 0;
     data.forEach(function(r) {
@@ -107,6 +113,7 @@ function initializeView () {
 }
 
 function setupOverview(q_index, response) {
+	console.log(q_index, response);
 	if (!q_index) 
 		q_index = 0;
 
@@ -127,7 +134,7 @@ function setupOverview(q_index, response) {
 			GLOBAL.questions[q_index]);
 	} else {
 		data = countSplitByColumn(GLOBAL.currData,
-			function(r) { return r[GLOBAL.questions[q_index-1]===response];},
+			function(r) { return r[GLOBAL.questions[q_index-1]]===response;},
 			GLOBAL.questions[q_index]);
 	}
 
@@ -143,7 +150,7 @@ function setupOverview(q_index, response) {
 
 	// update fields
 	svg.select("#title")
-	.text("Are you satisfied or dissatisfied with our country today?" + "\n" + "sdfasd")
+	.text(GLOBAL.q_text[q_index] + "\n" + "sdfasd")
 	svg.select("#info")
 	.text("Number of people asked: " + total_count)
 	.style("text-decoration","none")
@@ -190,7 +197,11 @@ function setupOverview(q_index, response) {
 
 }
 
-function updateOverview (){
+function updateOverview (response){
+	if (!response && GLOBAL.q_index !== 0) {
+		console.log("Error: Bad args");
+		return GLOBAL.q_index;
+	}
 	console.log("UPDATING OVERVIEW");
 	var svg = d3.select("#viz");
 	var s = computeSizes(svg);
@@ -203,7 +214,7 @@ function updateOverview (){
 			GLOBAL.questions[GLOBAL.q_index]);
 	} else {
 		data = countSplitByColumn(GLOBAL.currData,
-			function(r) { return r[GLOBAL.questions[GLOBAL.q_index-1]===response];},
+			function(r) { return r[GLOBAL.questions[GLOBAL.q_index-1]]===response;},
 			GLOBAL.questions[GLOBAL.q_index]);
 	}
 
@@ -211,7 +222,7 @@ function updateOverview (){
 	for (var key in data.counts) {
 		counts.push(data.counts[key]);
 	}
-
+	console.log(counts);
 	var yPos = d3.scale.linear() 
 	.domain([0,total_count])
 	.range([s.height-s.margin,s.margin]);
@@ -242,126 +253,16 @@ function updateOverview (){
 function switchToNextQuestion(response) {
 
 	// channel between questions
-	var data = countSplitByColumn(GLOBAL.data,
-		function(r) { 
-			return r[GLOBAL.questions[GLOBAL.q_index]]===response},
-		GLOBAL.questions[GLOBAL.q_index+1])
-
+	GLOBAL.q_index++;
 	// setup
-	setupNextQuestion(response, data);
+	setupOverview(GLOBAL.q_index, response);
 	// update
-	updateNextQuestion(response, data); 
+	updateOverview(response); 
 }
 
 function switchBack(){
 	setupOverview();
 	updateOverview();
-}
-
-function setupNextQuestion (r, d) {
-
-	var responses = []
-	var counts = []
-	for (var key in d.counts) {
-		responses.push(key);
-		counts.push(d.counts[key]);
-	}
-
-	var svg = d3.select("#viz");
-	var s = computeSizes(svg);
-	var barWidth = s.chartWidth/(2*responses.length-1);
-	
-	svg.select("#info")
-		.text("Back")
-		.style("text-decoration","underline")
-		.style("cursor","pointer")
-		.style("font-size", 12)
-		.style("fill","#696969")
-		.on("click",switchBack);
-
-	svg.selectAll("g").remove();
-
-	svg.select("#title")
-	.text(r + "... What do you think about the economic situation in the US?")
-
-	sel = svg.selectAll("g")
-	.data(responses)
-	.enter()
-	.append("g")
-	.attr("transform",
-	    function(d,i) { return "translate("+(s.margin+(i*2)*barWidth)+",0)"; 
-	});
-
-	// setup of bar
-	sel.append("rect")
-	.attr("class","bar")
-	.style("fill","#EC5D57")
-	.attr("x",0)
-	.attr("y",s.height-s.margin)
-	.attr("width",barWidth)
-	.attr("height",0);
-
-	sel.append("text")
-	.attr("class","value")
-	.attr("x",barWidth/2)
-	.attr("y",s.height-s.margin-20)
-	.attr("dy","0.3em")
-	.style("fill","#EC5D57")
-	.style("text-anchor","middle");
-
-	sel.append("text")
-	.attr("class","label")
-	.attr("x",barWidth/2)
-	.attr("y",s.margin+s.chartHeight+10)
-	.attr("dy","0.3em")
-	.style("font-size", 12)
-	.style("text-anchor","middle")
-	.style("fill","#696969")
-	.text(function(d) { return d; });
-}
-
-function updateNextQuestion(r, d) {
-	console.log("UPDATING NEW QUESTION");
-
-	var counts = []
-	var responses = []
-	var total_count = 0
-	for (var key in d.counts) {
-		total_count += d.counts[key];
-		responses.push(key);
-		counts.push(d.counts[key]);
-	}
-
-	var svg = d3.select("#viz");
-	var s = computeSizes(svg);
-	var barWidth = s.chartWidth/(2*responses.length-1);
-
-	var yPos = d3.scale.linear() 
-		.domain([0,total_count])
-		.range([s.height-s.margin,s.margin]);
-
-	var height = d3.scale.linear() 
-		.domain([0,total_count])
-		.range([0,s.chartHeight]);
-
-	sel = svg.selectAll("g") 
-		.data(counts);
-
-	sel.select(".bar") 
-		.attr("class", "bar")
-		.on("mouseover",function() { this.style.fill = "#EC6957"; })
-		.on("mouseout",function(d,i) { this.style.fill = "#EC5D57" })
-		.transition()
-		.duration(1000)
-		.attr("y",function(d) { return yPos(d)-10; }) 
-		.attr("height",function(d) { return height(d); });
-
-	// value on bar
-	sel.select(".value") 
-		.transition()
-		.duration(1000)
-		.attr("y",function(d) { return yPos(d) - 20; }) 
-		.text(function(d) { return Math.round(100*d/total_count)+"%"; });
 }
 
 // given an array of objects (each with a 'value' field)
